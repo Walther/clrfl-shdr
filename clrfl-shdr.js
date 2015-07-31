@@ -1,19 +1,109 @@
+var t0 = (new Date()).getTime();
+var t = 1;
+
 var gl;
 var trianglePosBuffer;
 var shaderProgram;
 var vertexPos = [-1.0, -1.0, 1.0, -1.0, -1.0,  1.0, -1.0,  1.0, 1.0, -1.0, 1.0,  1.0 ];
 
-var t0 = (new Date()).getTime();
-var t;
-
-var body = document.getElementsByTagName('body')[0];
-document.body.style="background-color:#111;margin:0;padding:0;overflow:hidden;"
 var c = document.createElement('canvas');
-c.style="margin:0;padding:0;float:left;display:block;position:absolute;top:0;";
-document.getElementById('c').style="display:none;";
 document.body.appendChild(c);
 
 gl = c.getContext("experimental-webgl");
+
+window.AudioContext = window.AudioContext || window.webkitAudioContext;
+var ctx = new AudioContext();
+
+var arrNotes = [
+  {'f':'50.0','l':.125},/**/
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'100.0','l':.125},/**/
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},/**/
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'100.0','l':.125},/**/
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'0.0','l':4.},/* pause*/
+  {'f':'50.0','l':.125},/**/
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'100.0','l':.125},/**/
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},/**/
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'100.0','l':.125},/**/
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'50.0','l':.125},
+  {'f':'0.0','l':.125},
+  {'f':'0.0','l':1.},/**/
+];
+
+// Add a translator to get notes from A3 to 440.00 etc
+
+function playAll(e) {
+    var o, t=ctx.currentTime, arrayLength = arrNotes.length, playlength = 0, bpm = 120;
+
+    for (var i = 0; i < arrayLength; i++) {
+        o = ctx.createOscillator();
+        // 1 second divided by number of beats per second times number of beats (length of a note)
+        playlength = 1/(bpm/60) * arrNotes[i].l;
+        o.type = 'square';
+        o.frequency.value = arrNotes[i].f;
+        o.start(t);
+        o.stop(t + playlength);
+        t += playlength;
+        o.connect(ctx.destination);
+    }
+}
+
+playAll();
+
+/*end music test*/
 
 function main()
 {
@@ -24,7 +114,7 @@ gl.bindBuffer(gl.ARRAY_BUFFER, trianglePosBuffer);
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPos), gl.STATIC_DRAW);
 trianglePosBuffer.itemSize = 2;
 trianglePosBuffer.numItems = 6;
-var minifiedFrag = "precision highp float; uniform float t; uniform vec2 resolution; mat3 rX(float a){return mat3(1,0,0,0,cos(a),-sin(a),0,sin(a),cos(a));} mat3 rY(float a){return mat3(cos(a),0,sin(a),0,1,0,-sin(a),0,cos(a));} mat3 rZ(float a){return mat3(cos(a),-sin(a),0,sin(a),cos(a),0,0,0,1);} float cube( vec3 p, vec3 b ){vec3 d = abs(p) - b; return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));} float map( in vec3 p ){float d = cube(p,vec3(2.0 + 1.6*sin(t/2.0))); float s = 1.0; for( int m=0; m<3; m++ ){vec3 a = mod( p*s, 2.0 )-1.0; s *= 3.0; vec3 r = abs(1.0 - 3.0*abs(a)); float da = max(r.x,r.y); float db = max(r.y,r.z); float dc = max(r.z,r.x); float c = (min(da,min(db,dc))-1.0)/s; d = max(d,c); } return d; } vec3 rep(vec3 pos, float repeat) {vec3 rep = mod(pos, repeat) - 0.5*repeat; return rep; } float cubeField(vec3 pos) {return map(rep(pos, 13.0 + 2.0*cos(t) /* distance between cubes*/) * rY(0.5*sin(t) /* twisting */  + (1.5+sin(t))*gl_FragCoord.x/resolution.x)); } float geometry( vec3 pos) {return cubeField(pos * rX(0.1*sin(0.5*t)) * rY(sin(0.05*t)) * rZ(0.05*t) ); } vec3 rayMarch( vec3 camera, vec3 dir ) {vec3 rayPos; float rayDist = 0.0; for (int i = 0; i < 64; ++i) {rayPos = camera + rayDist*dir; float curDist = geometry(rayPos); rayDist += curDist; if (curDist < 0.0001) {return vec3((1.0-(float(i)/64.0)), (gl_FragCoord.x/resolution.x + sin(t)), (gl_FragCoord.y/resolution.y + cos(0.2*t)) ) / (0.5*sqrt(rayDist +1.0)); } } return vec3(0.0); } void main(){float move = sin(t); vec3 camera = vec3(0,0,move); float aspect = resolution.x / resolution.y; vec2 uv = (2.0* gl_FragCoord.xy / resolution.xy -1.0) * vec2(aspect, 1.0); vec3 dir = normalize(vec3(uv, 5.0+-sin(t))); vec3 color = rayMarch(camera, dir); gl_FragColor = vec4(0.1 + 0.9*color, 1.0); }";
+var minifiedFrag = "precision highp float;uniform float t;uniform vec2 res;mat3 n(float v){return mat3(1,0,0,0,cos(v),-sin(v),0,sin(v),cos(v));}mat3 s(float v){return mat3(cos(v),0,sin(v),0,1,0,-sin(v),0,cos(v));}mat3 x(float v){return mat3(cos(v),-sin(v),0,sin(v),cos(v),0,0,0,1);}float n(vec3 v,vec3 m){vec3 s=abs(v)-m;return min(max(s.r,max(s.g,s.b)),0.)+length(max(s,0.));}float s(in vec3 v,in vec3 s){vec2 m=vec2(length(v.rb),v.g),r=vec2(s.b*s.g/s.r,-s.b),g=r-m,c=vec2(dot(r,r),r.r*r.r),i=vec2(dot(r,g),r.r*g.r),d=max(i,0.)*i/c;return sqrt(dot(g,g)-max(d.r,d.g))*sign(max(m.g*r.r-m.r*r.g,g.g));}float x(vec3 v,vec3 s){return length(v)-s.r;}float f(vec3 v,vec3 s){vec2 m=vec2(length(v.rb)-s.r,v.g);return length(m)-s.g;}float f(in vec3 v){float m;if(t<10.)m=n(v,vec3(2.+1.6*sin(t/3.)));else if(t<20.)m=x(2.*v,vec3(5.+1.6*sin(t/3.)));else if(t<25.)m=n(2.*v,vec3(5.+sin(t)*2.+.1*sin(t/3.)));else if(t<30.)m=x(2.*v,vec3(5.+1.6*sin(t/3.)));else if(t<58.)m=s(.2*v,vec3(4.+sin(t/3.)));else;float r=1.;for(int f=0;f<3;f++){vec3 i=mod(v*r,2.)-1.;r*=3.;vec3 d;if(t<30.||t>58.)d=abs(sin(t)+abs(i));else d=abs(1.-3.*abs(i));float g=max(d.r,d.g),c=max(d.g,d.b),b=max(d.b,d.r),e=(min(g,min(c,b))-1.)/r;m=max(m,e);}return m;}vec3 v(vec3 v,float s){vec3 m=mod(v,s)-.5*s;return m;}float v(vec3 m){return f(v(m,13.+2.*cos(t))*s(.5*sin(t)+gl_FragCoord.r/res.r));}float m(vec3 m){return v(m*n(.1*sin(.5*t))*s(sin(.05*t))*x(.05*t));}vec3 m(vec3 v,vec3 s){vec3 r;float f=0.;for(int i=0;i<64;++i){r=v+f*s;float d=m(r);f+=d;if(d<.0001)return vec3(1.-float(i)/64.,gl_FragCoord.r/res.r+sin(t),gl_FragCoord.g/res.g+cos(.2*t))/(.5*sqrt(f+1.));}return vec3(0.);}void main(){float v=1.;vec3 r=vec3(0,0,v);float i=res.r/res.g;vec2 s=(2.*gl_FragCoord.rg/res.rg-1.)*vec2(i,1.);vec3 g=normalize(vec3(s,t)),c=m(r,g);gl_FragColor=vec4(.1+.9*c,1.);}";
 var minifiedVert = "attribute vec3 aVertexPosition; void main(void) {gl_Position = vec4(aVertexPosition, 1.0); }";
 
 var fragmentShader = getShader(gl, minifiedFrag, "fragment");
@@ -52,15 +142,17 @@ draw();
 
 function draw()
 {
+
+
 gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-t = (new Date()).getTime() - t0;
+if (t<58000){ t = (new Date()).getTime() - t0; }
 gl.uniform1f(gl.getUniformLocation(shaderProgram, 't'), t*0.001);
 
 gl.viewportWidth = c.width;
 gl.viewportHeight = c.height;
-gl.uniform2f(gl.getUniformLocation(shaderProgram, 'resolution'), gl.viewportWidth, gl.viewportHeight);
+gl.uniform2f(gl.getUniformLocation(shaderProgram, 'res'), gl.viewportWidth, gl.viewportHeight);
 
 gl.bindBuffer(gl.ARRAY_BUFFER, trianglePosBuffer);
 gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, trianglePosBuffer.itemSize, gl.FLOAT, false, 0, 0);
