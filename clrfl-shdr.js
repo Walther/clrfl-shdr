@@ -83,27 +83,30 @@ var arrNotes = [
   {'f':'0.0','l':1.},/**/
 ];
 
-// Add a translator to get notes from A3 to 440.00 etc
-
 function playAll(e) {
-    var o, t=ctx.currentTime, arrayLength = arrNotes.length, playlength = 0, bpm = 120;
+    var o, audiotime=ctx.currentTime, arrayLength = arrNotes.length, playlength = 0, bpm = 120;
 
+    //console.log('lol ',audiotime);
+    var total = 0;
     for (var i = 0; i < arrayLength; i++) {
         o = ctx.createOscillator();
         // 1 second divided by number of beats per second times number of beats (length of a note)
         playlength = 1/(bpm/60) * arrNotes[i].l;
-        o.type = 'square';
-        o.frequency.value = arrNotes[i].f;
-        o.start(t);
-        o.stop(t + playlength);
-        t += playlength;
+        o.type = 'sawtooth';
+        o.frequency.value = 0.6*arrNotes[i].f;
+        o.start(audiotime);
+        o.stop(audiotime + playlength);
+        total += playlength;
+        audiotime += playlength;
         o.connect(ctx.destination);
     }
+
+    if (t<55000) {
+      setTimeout(playAll, 1000);
+    }
+
 }
-
 playAll();
-
-/*end music test*/
 
 function main()
 {
