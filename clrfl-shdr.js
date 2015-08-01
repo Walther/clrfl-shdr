@@ -1,3 +1,6 @@
+// Demo by Walther
+// Help w/ audio by Xard
+
 var t0 = (new Date()).getTime();
 var t = 1;
 
@@ -5,6 +8,18 @@ var gl;
 var trianglePosBuffer;
 var shaderProgram;
 var vertexPos = [-1.0, -1.0, 1.0, -1.0, -1.0,  1.0, -1.0,  1.0, 1.0, -1.0, 1.0,  1.0 ];
+
+// pseudo-random number vomiter
+var seed = 2015;
+prng = function(max, min) {
+    max = max || 1;
+    min = min || 0;
+ 
+    seed = (seed * 9301 + 49297) % 233280;
+    var rnd = seed / 233280;
+ 
+    return min + rnd * (max - min);
+}
 
 var c = document.createElement('canvas');
 document.body.appendChild(c);
@@ -14,99 +29,148 @@ gl = c.getContext("experimental-webgl");
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var ctx = new AudioContext();
 
-var arrNotes = [
-  {'f':'50.0','l':.125},/**/
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'100.0','l':.125},/**/
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},/**/
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'100.0','l':.125},/**/
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'0.0','l':4.},/* pause*/
-  {'f':'50.0','l':.125},/**/
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'100.0','l':.125},/**/
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},/**/
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'100.0','l':.125},/**/
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'50.0','l':.125},
-  {'f':'0.0','l':.125},
-  {'f':'0.0','l':1.},/**/
+/* Awesome tracker. Or maybe not that much. */
+
+var kick = function(audiotime, frequency, volume){
+  var o = ctx.createOscillator();
+  o.type = 'sine';
+  o.frequency.exponentialRampToValueAtTime(50.0, audiotime + 1);
+  o.frequency.setValueAtTime(frequency, audiotime);
+
+  var gain = ctx.createGain();
+  gain.gain.setValueAtTime(volume, audiotime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audiotime + 0.5);
+  
+  o.connect(gain);
+  gain.connect(ctx.destination);
+
+  return o;
+};
+
+var kicknotes = [
+  {'f':'100.0','l':1,'v':1.0}
 ];
 
-function playAll(e) {
-    var o, audiotime=ctx.currentTime, arrayLength = arrNotes.length, playlength = 0, bpm = 120;
+var snare = function(audiotime, frequency, volume){
+  var o = ctx.createOscillator();
+  o.type = 'sawtooth';
+  o.frequency.exponentialRampToValueAtTime(100.0, audiotime + 1);
+  o.frequency.setValueAtTime(frequency, audiotime);
 
-    //console.log('lol ',audiotime);
-    var total = 0;
-    for (var i = 0; i < arrayLength; i++) {
-        o = ctx.createOscillator();
-        // 1 second divided by number of beats per second times number of beats (length of a note)
-        playlength = 1/(bpm/60) * arrNotes[i].l;
-        o.type = 'sawtooth';
-        o.frequency.value = 0.6*arrNotes[i].f;
-        o.start(audiotime);
-        o.stop(audiotime + playlength);
-        total += playlength;
-        audiotime += playlength;
-        o.connect(ctx.destination);
-    }
+  var gain = ctx.createGain();
+  gain.gain.setValueAtTime(volume, audiotime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audiotime + 0.5);
+  
+  o.connect(gain);
+  gain.connect(ctx.destination);
 
-    if (t<55000) {
-      setTimeout(playAll, 1000);
-    }
-
+  return o;
 }
-playAll();
+
+var snarenotes = [
+  {'f':'0.1','l':0.5,'v':0.1},
+  {'f':'150.0','l':1,'v':0.5},
+  {'f':'150.0','l':1,'v':0.5},
+  {'f':'150.0','l':1,'v':0.5},
+  {'f':'150.0','l':0.5,'v':0.5}
+];
+
+var sine1 = function(audiotime, frequency, volume){
+  var o = ctx.createOscillator();
+  o.type = 'sine';
+  o.frequency.exponentialRampToValueAtTime(frequency, audiotime + 1);
+  o.frequency.setValueAtTime(frequency*0.8, audiotime);
+
+  var gain = ctx.createGain();
+  gain.gain.setValueAtTime(volume, audiotime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audiotime + 0.5);
+  
+  o.connect(gain);
+  gain.connect(ctx.destination);
+
+  return o;
+}
+
+var sine2 = function(audiotime, frequency, volume){
+  var o = ctx.createOscillator();
+  o.type = 'sine';
+  o.frequency.exponentialRampToValueAtTime(frequency, audiotime + 1);
+  o.frequency.setValueAtTime(frequency*1.2, audiotime);
+
+  var gain = ctx.createGain();
+  gain.gain.setValueAtTime(volume, audiotime);
+  gain.gain.exponentialRampToValueAtTime(0.5, audiotime + 4);
+  
+  o.connect(gain);
+  gain.connect(ctx.destination);
+
+  return o;
+}
+
+var synth1notes = [
+  {'f':'0.1','l':8,'v':0.1},
+  {'f':'440.0','l':1,'v':0.5},
+  {'f':'330.0','l':1,'v':0.5},
+  {'f':'220.0','l':1,'v':0.5},
+  {'f':'220.0','l':1,'v':0.5},
+  {'f':'440.0','l':1,'v':0.5},
+  {'f':'330.0','l':1,'v':0.5},
+  {'f':'220.0','l':1,'v':0.5},
+  {'f':'220.0','l':1,'v':0.5},
+  {'f':'440.0','l':1,'v':0.5},
+  {'f':'330.0','l':1,'v':0.5},
+  {'f':'220.0','l':1,'v':0.5},
+  {'f':'220.0','l':1,'v':0.5}
+]
+
+var synth2notes = [
+  {'f':'0.1','l':16,'v':0.1},
+  {'f':'660.0','l':1,'v':0.5},
+  {'f':'495.0','l':1,'v':0.5},
+  {'f':'330.0','l':1,'v':0.5},
+
+  {'f':'660.0','l':0.5,'v':0.25},
+  {'f':'660.0','l':0.5,'v':0.25},
+  {'f':'495.0','l':0.5,'v':0.25},
+  {'f':'495.0','l':0.5,'v':0.25},
+  {'f':'330.0','l':0.5,'v':0.25},
+  {'f':'330.0','l':0.5,'v':0.25},
+  {'f':'660.0','l':0.5,'v':0.25},
+  {'f':'660.0','l':0.5,'v':0.25},
+  {'f':'495.0','l':0.5,'v':0.25},
+  {'f':'495.0','l':0.5,'v':0.25},
+]
+
+var synth3notes = [
+  {'f':'0.1','l':24,'v':0.4},
+  {'f':'110.0','l':4,'v':0.4},
+  {'f':'55.0','l':4,'v':0.4},
+  {'f':'110.0','l':4,'v':0.4},
+  {'f':'55.0','l':4,'v':0.4},
+
+]
+
+function playAll(instrument, notes) {
+    var o, audiotime=t, arrayLength = notes.length, playlength = 0, bpm = 120;
+
+    while(true){
+      if (audiotime >= 55) {break;}
+      for (var i = 0; i < arrayLength; i++) {
+          playlength = 1/(bpm/60) * notes[i].l;
+          var o = instrument(audiotime, notes[i].f, notes[i].v);
+          o.start(audiotime);
+          o.stop(audiotime + playlength);
+          audiotime += playlength;
+      }
+    }
+
+};
+
+playAll(kick, kicknotes);
+//playAll(snare, snarenotes);
+playAll(sine1, synth1notes);
+playAll(sine1, synth2notes);
+playAll(sine2, synth3notes);
 
 function main()
 {
