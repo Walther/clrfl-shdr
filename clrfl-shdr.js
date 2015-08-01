@@ -13,7 +13,7 @@ var vertexPos = [-1.0, -1.0, 1.0, -1.0, -1.0,  1.0, -1.0,  1.0, 1.0, -1.0, 1.0, 
 var seed = 2015;
 prng = function(max, min) {
     max = max || 1;
-    min = min || 0;
+    min = min || -1;
  
     seed = (seed * 9301 + 49297) % 233280;
     var rnd = seed / 233280;
@@ -68,11 +68,57 @@ var snare = function(audiotime, frequency, volume){
 }
 
 var snarenotes = [
+  {'f':'0.1','l':40,'v':0.1},
+
   {'f':'0.1','l':0.5,'v':0.1},
-  {'f':'150.0','l':1,'v':0.5},
-  {'f':'150.0','l':1,'v':0.5},
-  {'f':'150.0','l':1,'v':0.5},
-  {'f':'150.0','l':0.5,'v':0.5}
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+
+  {'f':'0.1','l':0.5,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+
+  {'f':'0.1','l':0.5,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+
+  {'f':'0.1','l':0.5,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+
+  {'f':'0.1','l':0.5,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1},
+  {'f':'150.0','l':0.1,'v':0.2},
+  {'f':'0.1','l':0.9,'v':0.1}
 ];
 
 var sine1 = function(audiotime, frequency, volume){
@@ -105,6 +151,22 @@ var sine2 = function(audiotime, frequency, volume){
   gain.connect(ctx.destination);
 
   return o;
+}
+
+var noise = function(audiotime, frequency, volume){
+
+  var bufferSize = 2 * ctx.sampleRate,
+      noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate),
+      output = noiseBuffer.getChannelData(0);
+  for (var i = 0; i < bufferSize; i++) {
+      output[i] = prng() * 2 - 1;
+  }
+
+  var whiteNoise = ctx.createBufferSource();
+  whiteNoise.buffer = noiseBuffer;
+
+
+  return whiteNoise;
 }
 
 var synth1notes = [
@@ -150,6 +212,10 @@ var synth3notes = [
 
 ]
 
+var noisenotes = [
+  {'f':'220','l':4,'v':0.4},
+]
+
 function playAll(instrument, notes) {
     var o, audiotime=t, arrayLength = notes.length, playlength = 0, bpm = 120;
 
@@ -167,10 +233,11 @@ function playAll(instrument, notes) {
 };
 
 playAll(kick, kicknotes);
-//playAll(snare, snarenotes);
+playAll(snare, snarenotes);
 playAll(sine1, synth1notes);
 playAll(sine1, synth2notes);
 playAll(sine2, synth3notes);
+playAll(noise, noisenotes);
 
 function main()
 {
